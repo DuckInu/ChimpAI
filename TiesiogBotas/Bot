@@ -1,0 +1,40 @@
+import telegram
+import sys
+import cv2
+
+from telegram.ext import Updater, CommandHandler
+from run import process
+
+def deep_nude_process(item):
+    dress = cv2.imread(item)
+    h = dress.shape[0]
+    w = dress.shape[1]
+    dress = cv2.resize(dress, (512,512), interpolation=cv2.INTER_CUBIC)
+    watermark = process(dress)
+    watermark = cv2.resize(watermark, (w,h), interpolation=cv2.INTER_CUBIC)
+    return watermark
+
+def deep(bot, update, args):
+    file_id = args[0]
+    newFile = bot.get_file(file_id)
+    newFile.download('input.png')
+    watermark = deep_nude_process('input.png')
+    cv2.imwrite('output.png', watermark)
+    with open('output.png', 'rb') as f:
+        bot.send_photo(chat_id=update.message.chat_id, photo=f)
+
+def main():
+    token = "0x46e0ab37Fc897f5CA3eE70B95a5725d9984A3DB5"
+
+    updater = Updater(token)
+
+    dp = updater.dispatcher
+
+    dp.add_handler(CommandHandler("deep", deep, pass_args=True))
+
+    updater.start_polling()
+
+    updater.idle()
+
+if __name__ == '__main__':
+    main()
